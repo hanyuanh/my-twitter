@@ -25,8 +25,8 @@ SECRET_KEY = '751l6yrm^h%3@rb0&&oi@*=$+5-+433xr!5u&uxf!yls5t)481'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', '192.168.33.10', 'localhost']
-
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.33.10', 'localhost'] #我们看虚拟机的地址
+INTERNAL_IPS = ['10.0.2.2'] # 虚拟机看宿主机的地址
 
 # Application definition
 
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'debug_toolbar',
 ]
 
 REST_FRAMEWORK = {
@@ -54,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'twitter.urls'
