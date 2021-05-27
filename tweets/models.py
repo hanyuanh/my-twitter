@@ -16,6 +16,10 @@ class Tweet(models.Model):
     # updated this var when created
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        # index_together = ((tup1), (tup2), (tup3), ...)
+        index_together = (('user', 'created_at'), )
+
     @property
     def hours_to_now(self):
         # No timezone info in datetime.now. UTC timezone needed
