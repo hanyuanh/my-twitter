@@ -29,6 +29,7 @@ class Friendship(models.Model):
         # should only store once. This code will return error if multiple
         # relationships create (e.g. someone clicks follow button too fast)
         unique_together = (('from_user_id', 'to_user_id'),)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return '{} followed {}'.format(self.from_user_id, self.to_user_id)
