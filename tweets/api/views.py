@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from tweets.api.serializers import TweetSerializer, TweetSerializerForCreate
 from tweets.models import Tweet
+from newsfeeds.services import NewsFeedService
 
 # inherited from GenericViewSet
 # try not to use ModelViewSet(you can CRUD in this view set), which is not what
@@ -46,6 +47,7 @@ class TweetViewSet(viewsets.GenericViewSet):
         # otherwise we have a tweet instance here
         # save() will call create method in TweetSerializerForCreate
         tweet = serializer.save()
+        NewsFeedService.fanout_to_followers(tweet)
         # Here I use TweetSerializer to show whats in the tweet
         # reminder: It is different from TweetSerializerForCreate
         return Response(TweetSerializer(tweet).data, status=201)
