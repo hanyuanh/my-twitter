@@ -5,10 +5,12 @@ from comments.models import Comment
 from comments.api.serializers import (
     CommentSerializer,
     CommentSerializerForCreate,
+    CommentSerializerForUpdate,
 )
+from comments.api.permissions import IsObjectOwner
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(viewsets.GenericViewSet):
     """
     Here only implement list, create, update, destroy
     doesn't implement retrieve(to search for one single comment) because of no
@@ -32,6 +34,8 @@ class CommentViewSet(viewsets.ModelViewSet):
         # not just class names like  AllowAny / IsAuthenticated
         if self.action == 'create':
             return [IsAuthenticated()]
+        if self.action in ['update', 'destroy']:
+            return [IsAuthenticated(), IsObjectOwner()]
         return [AllowAny()]
 
     def create(self, request, *args, **kwargs):
@@ -56,3 +60,34 @@ class CommentViewSet(viewsets.ModelViewSet):
             CommentSerializer(comment).data,
             status=status.HTTP_201_CREATED,
         )
+
+    def update(self, request, *args, **kwargs):
+        # get_object is a function wrapped by DRF. It will use filter id to
+        # filter object out of queryset, raise 404 error when not found
+        # There is no extra code needed
+        comment = self.get_object()
+        serializer = CommentSerializerForUpdate(
+            instance=comment,
+            data=request.data,
+        )
+        if not serializer.is_valid():
+            raise Response({
+                'message': 'Please check input'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        # save() will trigger update() in serializer, click into save() to see
+        # implementation
+        # save() will trigger create() or update() based on whether instance
+        # param is filled or not
+        comment = serializer.save()
+        return Response(
+            CommentSerializer(comment).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        comment = self.get_object()
+        comment.delete()
+        # In DRF, by default, destroy() returns status code = 204 no content
+        # Here return success=True, just for frontend to make use of it to make
+        # easier judgment that delete is succeed, return 200
+        return Response({'success': True}, status=status.HTTP_200_OK)
