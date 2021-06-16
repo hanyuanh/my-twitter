@@ -104,3 +104,37 @@ class CommentApiTests(TestCase):
         self.assertEqual(comment.created_at, before_created_at)
         self.assertNotEqual(comment.created_at, now)
         self.assertNotEqual(comment.updated_at, before_updated_at)
+
+
+    def test_list(self):
+        # invalid if there is no tweet_id param
+        response = self.anonymous_client.get(COMMENT_URL)
+        self.assertEqual(response.status_code, 400)
+
+        # valid if with tweet_id
+        # there is no comment firstly
+        response = self.anonymous_client.get(COMMENT_URL, {
+            'tweet_id': self.tweet.id,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['comments']), 0)
+
+        # comments ordered by timestamp
+        self.create_comment(self.hanyuan, self.tweet, '1')
+        self.create_comment(self.eric, self.tweet, '2')
+        self.create_comment(self.eric, self.create_tweet(self.eric), '3')
+        response = self.anonymous_client.get(COMMENT_URL, {
+            'tweet_id': self.tweet.id,
+        })
+        self.assertEqual(len(response.data['comments']), 2)
+        self.assertEqual(response.data['comments'][0]['content'], '1')
+        self.assertEqual(response.data['comments'][1]['content'], '2')
+
+        # Here user_id and tweet_id are both provided as filter, however only
+        # tweet_id should be used as filter
+        # because of the definition of filterset_fields in views.py
+        response = self.anonymous_client.get(COMMENT_URL, {
+            'tweet_id': self.tweet.id,
+            'user_id': self.hanyuan.id,
+        })
+        self.assertEqual(len(response.data['comments']), 2)
