@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from tweets.models import Tweet
 from accounts.api.serializers import UserSerializerForTweet
+from comments.api.serializers import CommentSerializer
 
 # ModelSerializer: set the properties in the fields, the serializer will auto
 # gen the related variables in the program
@@ -13,6 +14,14 @@ class TweetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tweet
         fields = ('id', 'user', 'created_at', 'content')
+
+
+class TweetSerializerWithComments(TweetSerializer):
+    comments = CommentSerializer(source='comment_set', many=True)
+
+    class Meta:
+        model = Tweet
+        fields = ('id', 'user', 'created_at', 'content', 'comments')
 
 
 class TweetSerializerForCreate(serializers.ModelSerializer):
