@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from tweets.api.serializers import (
     TweetSerializer,
     TweetSerializerForCreate,
-    TweetSerializerWithComments,
+    TweetSerializerForDetail,
 )
 from tweets.models import Tweet
 from newsfeeds.services import NewsFeedService
@@ -35,13 +35,21 @@ class TweetViewSet(viewsets.GenericViewSet):
             user_id = request.query_params['user_id']
         ).order_by('-created_at')   #reverse order
         # get instance of the list of tweets
-        serializer = TweetSerializer(tweets, many=True)
+        serializer = TweetSerializer(
+            tweets,
+            context={'request': request},
+            many=True,
+        )
         # By default return dict
         return Response({'tweets': serializer.data})
 
     def retrieve(self, request, *args, **kwargs):
         tweet = self.get_object()
-        return Response(TweetSerializerWithComments(tweet).data)
+        serializer = TweetSerializerForDetail(
+            tweet,
+            context={'request': request},
+        )
+        return Response(serializer.data)
 
     #@action(permission ...)
     def create(self, request):
@@ -61,4 +69,7 @@ class TweetViewSet(viewsets.GenericViewSet):
         NewsFeedService.fanout_to_followers(tweet)
         # Here I use TweetSerializer to show whats in the tweet
         # reminder: It is different from TweetSerializerForCreate
-        return Response(TweetSerializer(tweet).data, status=201)
+        return Response(
+            TweetSerializer(tweet, context={'request': request}).data,
+            status=201,
+        )
