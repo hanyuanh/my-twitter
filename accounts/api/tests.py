@@ -1,6 +1,7 @@
 from testing.testcases import TestCase
 from rest_framework.test import APIClient
 from django.contrib.auth.models import User
+from accounts.models import UserProfile
 
 
 LOGIN_URL = '/api/accounts/login/'
@@ -12,7 +13,7 @@ LOGIN_STATUS_URL = '/api/accounts/login_status/'
 class AccountApiTests(TestCase):
 
     def setUp(self):
-        # 这个函数会在每个 test function 执行的时候被执行
+        # setUp() function would be executed before each test function starts
         self.client = APIClient()
         self.user = self.create_user(
             username='admin',
@@ -21,26 +22,27 @@ class AccountApiTests(TestCase):
         )
 
     def test_login(self):
-        # 每个测试函数必须以 test_ 开头，才会被自动调用进行测试
-        # 测试必须用 post 而不是 get
+        # test functions must start with "test_" so that they can be called
+        # automatically
+        # post is used, not get
         response = self.client.get(LOGIN_URL, {
             'username': self.user.username,
             'password': 'correct password',
         })
-        # 登陆失败，http status code 返回 405 = METHOD_NOT_ALLOWED
+        # login failed, http status code returns 405 = METHOD_NOT_ALLOWED
         self.assertEqual(response.status_code, 405)
 
-        # 用了 post 但是密码错了
+        # post is used but password is incorrect
         response = self.client.post(LOGIN_URL, {
             'username': self.user.username,
             'password': 'wrong password',
         })
         self.assertEqual(response.status_code, 400)
 
-        # 验证还没有登录
+        # verify the login status
         response = self.client.get(LOGIN_STATUS_URL)
         self.assertEqual(response.data['has_logged_in'], False)
-        # 用正确的密码
+        # use correct password
         response = self.client.post(LOGIN_URL, {
             'username': self.user.username,
             'password': 'correct password',
@@ -48,7 +50,7 @@ class AccountApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotEqual(response.data['user'], None)
         self.assertEqual(response.data['user']['email'], 'admin@jiuzhang.com')
-        # 验证已经登录了
+        # verify that it has logged in
         response = self.client.get(LOGIN_STATUS_URL)
         self.assertEqual(response.data['has_logged_in'], True)
         #
@@ -59,24 +61,25 @@ class AccountApiTests(TestCase):
         })
         self.assertEqual(response.status_code, 400)
         self.assertEqual(str(response.data['errors']['username'][0]), 'User does not exist.')
+
     def test_logout(self):
-        # 先登录
+        # first login
         self.client.post(LOGIN_URL, {
             'username': self.user.username,
             'password': 'correct password',
         })
-        # 验证用户已经登录
+        # verify the user has logged in
         response = self.client.get(LOGIN_STATUS_URL)
         self.assertEqual(response.data['has_logged_in'], True)
 
-        # 测试必须用 post
+        # post is a must in testing
         response = self.client.get(LOGOUT_URL)
         self.assertEqual(response.status_code, 405)
 
-        # 改用 post 成功 logout
+        # switch to post method and success
         response = self.client.post(LOGOUT_URL)
         self.assertEqual(response.status_code, 200)
-        # 验证用户已经登出
+        # verify that the user is logged out
         response = self.client.get(LOGIN_STATUS_URL)
         self.assertEqual(response.data['has_logged_in'], False)
 
@@ -86,11 +89,11 @@ class AccountApiTests(TestCase):
             'email': 'someone@jiuzhang.com',
             'password': 'any password',
         }
-        # 测试 get 请求失败
+        # get testing. Response failed
         response = self.client.get(SIGNUP_URL, data)
         self.assertEqual(response.status_code, 405)
 
-        # 测试错误的邮箱
+        # test an incorrect email address
         response = self.client.post(SIGNUP_URL, {
             'username': 'someone',
             'email': 'not a correct email',
@@ -99,7 +102,7 @@ class AccountApiTests(TestCase):
         # print(response.data)
         self.assertEqual(response.status_code, 400)
 
-        # 测试密码太短
+        # test password is too short
         response = self.client.post(SIGNUP_URL, {
             'username': 'someone',
             'email': 'someone@jiuzhang.com',
@@ -108,7 +111,7 @@ class AccountApiTests(TestCase):
         # print(response.data)
         self.assertEqual(response.status_code, 400)
 
-        # 测试用户名太长
+        # test username is too long
         response = self.client.post(SIGNUP_URL, {
             'username': 'username is tooooooooooooooooo loooooooong',
             'email': 'someone@jiuzhang.com',
@@ -117,10 +120,14 @@ class AccountApiTests(TestCase):
         # print(response.data)
         self.assertEqual(response.status_code, 400)
 
-        # 成功注册
+        # sign up successfully
         response = self.client.post(SIGNUP_URL, data)
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['user']['username'], 'someone')
-        # 验证用户已经登入
+        # verify that the userprofile is created
+        created_user_id = response.data['user']['id']
+        profile = UserProfile.objects.filter(user_id=created_user_id).first()
+        self.assertNotEqual(profile, None)
+        # verify that the user has logged in
         response = self.client.get(LOGIN_STATUS_URL)
         self.assertEqual(response.data['has_logged_in'], True)
