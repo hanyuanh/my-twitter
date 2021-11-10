@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 
+import sys
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,8 +27,8 @@ SECRET_KEY = '751l6yrm^h%3@rb0&&oi@*=$+5-+433xr!5u&uxf!yls5t)481'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', '192.168.33.10', 'localhost'] #我们看虚拟机的地址
-INTERNAL_IPS = ['10.0.2.2'] # 虚拟机看宿主机的地址
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.33.10', 'localhost'] # addr of the virtual machine
+INTERNAL_IPS = ['10.0.2.2'] # host address from VM
 
 # Application definition
 
@@ -148,6 +150,20 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# setting for what type of storage system is being used for files from upload
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+TESTING = ((" ".join(sys.argv)).find('manage.py test') != -1)
+if TESTING:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+AWS_STORAGE_BUCKET_NAME = 'django-twitter-hanyuan'
+AWS_S3_REGION_NAME = 'us-west-1'
+
+# store AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in local_settings.py
+# AWS_ACCESS_KEY_ID = 'YOUR_ACCESS_KEY_ID'
+# AWS_SECRET_ACCESS_KEY = 'YOUR_SECRET_ACCESS_KEY'
+
+MEDIA_ROOT = 'media/'
 try:
     from .local_settings import *
 except:
